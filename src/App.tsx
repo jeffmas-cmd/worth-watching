@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GameData, Prefs } from "./types";
-import { fetchAllGames } from "./lib/espn";
+import { fetchAllGames, toESPNDate } from "./lib/espn";
 import { computeVerdict } from "./lib/verdict";
 import { loadPrefs, savePrefs } from "./lib/prefs";
 import { GamePicker } from "./components/GamePicker";
@@ -15,11 +15,15 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [selectedGame, setSelectedGame] = useState<GameData | null>(null);
   const [showPrefs, setShowPrefs] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const refreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const loadGames = useCallback(async (currentPrefs: Prefs) => {
+  const isToday = toESPNDate(selectedDate) === toESPNDate(new Date());
+
+  const loadGames = useCallback(async (currentPrefs: Prefs, date: Date) => {
+    setLoading(true);
     try {
-      const data = await fetchAllGames(currentPrefs);
+      const data = await fetchAllGames(currentPrefs, toESPNDate(date));
       setGames(data);
       setError(null);
     } catch (e) {
@@ -30,12 +34,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    loadGames(prefs);
+    loadGames(prefs, selectedDate);
 
+    if (refreshRef.current) clearInterval(refreshRef.current);
     refreshRef.current = setInterval(() => {
+      if (!isToday) return;
       setGames((prev) => {
         const hasLive = prev.some((g) => g.status === "inprogress");
-        if (hasLive) loadGames(prefs);
+        if (hasLive) loadGames(prefs, selectedDate);
         return prev;
       });
     }, 60_000);
@@ -43,7 +49,7 @@ export default function App() {
     return () => {
       if (refreshRef.current) clearInterval(refreshRef.current);
     };
-  }, [prefs, loadGames]);
+  }, [prefs, selectedDate, loadGames, isToday]);
 
   // When a live game goes final, update the selected game
   useEffect(() => {
@@ -102,6 +108,8 @@ export default function App() {
           prefs={prefs}
           loading={loading}
           error={error}
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
           onSelectGame={setSelectedGame}
         />
       )}

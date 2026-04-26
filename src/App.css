@@ -71,6 +71,39 @@ body {
   border-radius: 8px;
 }
 
+/* ── Date Strip ────────────────────────────────── */
+.date-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 0 12px;
+  margin-bottom: 8px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.date-strip::-webkit-scrollbar { display: none; }
+
+.date-chip {
+  flex-shrink: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 36px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+.date-chip--selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
 /* ── Game Picker ───────────────────────────────── */
 .game-picker__title {
   font-size: 28px;

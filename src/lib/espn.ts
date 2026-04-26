@@ -163,11 +163,20 @@ function normalizeGame(
   };
 }
 
+export function toESPNDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}${m}${d}`;
+}
+
 export async function fetchGamesForSport(
   sport: Sport,
-  prefs: Prefs
+  prefs: Prefs,
+  date?: string // YYYYMMDD, omit for today
 ): Promise<GameData[]> {
-  const url = `${ESPN_BASE}/${SPORT_PATH[sport]}/scoreboard`;
+  const params = date ? `?dates=${date}` : "";
+  const url = `${ESPN_BASE}/${SPORT_PATH[sport]}/scoreboard${params}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`ESPN API error: ${res.status}`);
   const data = await res.json();
@@ -187,9 +196,9 @@ export async function fetchGamesForSport(
     .filter((g): g is GameData => g !== null);
 }
 
-export async function fetchAllGames(prefs: Prefs): Promise<GameData[]> {
+export async function fetchAllGames(prefs: Prefs, date?: string): Promise<GameData[]> {
   const results = await Promise.allSettled(
-    prefs.sports.map((sport) => fetchGamesForSport(sport, prefs))
+    prefs.sports.map((sport) => fetchGamesForSport(sport, prefs, date))
   );
 
   return results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));

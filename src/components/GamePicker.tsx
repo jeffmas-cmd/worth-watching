@@ -1,12 +1,15 @@
 import type { GameData, Prefs, Sport } from "../types";
 import { NY_TEAMS } from "../types";
 import { getSportLabel } from "../lib/prefs";
+import { toESPNDate } from "../lib/espn";
 
 interface Props {
   games: GameData[];
   prefs: Prefs;
   loading: boolean;
   error: string | null;
+  selectedDate: Date;
+  onSelectDate: (date: Date) => void;
   onSelectGame: (game: GameData) => void;
 }
 
@@ -21,8 +24,30 @@ function formatTime(dateStr: string): string {
   return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
-export function GamePicker({ games, prefs, loading, error, onSelectGame }: Props) {
+function getPast7Days(): Date[] {
+  const days: Date[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(d);
+  }
+  return days;
+}
+
+function formatDayLabel(date: Date, todayStr: string): string {
+  const ds = toESPNDate(date);
+  if (ds === todayStr) return "Today";
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (ds === toESPNDate(yesterday)) return "Yesterday";
+  return date.toLocaleDateString([], { weekday: "short", month: "numeric", day: "numeric" });
+}
+
+export function GamePicker({ games, prefs, loading, error, selectedDate, onSelectDate, onSelectGame }: Props) {
   const sports: Sport[] = ["mlb", "nfl", "nba", "nhl"];
+  const todayStr = toESPNDate(new Date());
+  const selectedStr = toESPNDate(selectedDate);
+  const days = getPast7Days();
 
   const gamesBySport = sports.reduce<Record<Sport, GameData[]>>(
     (acc, sport) => {
@@ -32,30 +57,40 @@ export function GamePicker({ games, prefs, loading, error, onSelectGame }: Props
     { mlb: [], nfl: [], nba: [], nhl: [] }
   );
 
-  if (loading) {
-    return <div className="loading">Loading today's games...</div>;
-  }
-
-  if (error) {
-    return <div className="error">Failed to load games: {error}</div>;
-  }
-
-  const hasAnyGames = games.length > 0;
-
   return (
     <div className="game-picker">
       <h1 className="game-picker__title">Worth Watching?</h1>
-      <p className="game-picker__subtitle">NY teams · Today</p>
 
-      {!hasAnyGames && (
-        <p className="game-picker__empty">No NY games today.</p>
+      <div className="date-strip">
+        {days.map((day) => {
+          const ds = toESPNDate(day);
+          const isSelected = ds === selectedStr;
+          return (
+            <button
+              key={ds}
+              className={`date-chip ${isSelected ? "date-chip--selected" : ""}`}
+              onClick={() => onSelectDate(new Date(day))}
+            >
+              {formatDayLabel(day, todayStr)}
+            </button>
+          );
+        })}
+      </div>
+
+      {loading && <div className="loading">Loading games...</div>}
+
+      {!loading && error && (
+        <div className="error">Failed to load games: {error}</div>
       )}
 
-      {sports.map((sport) => {
+      {!loading && !error && games.length === 0 && (
+        <p className="game-picker__empty">No NY games on this date.</p>
+      )}
+
+      {!loading && !error && sports.map((sport) => {
         const sportGames = gamesBySport[sport];
         if (sportGames.length === 0) return null;
 
-        // Sort: favorite team's games first
         const favTeam = prefs.favoriteTeams[sport];
         const sorted = [...sportGames].sort((a, b) => {
           const aFav = a.favoriteTeamPlaying ? -1 : 0;
@@ -82,9 +117,7 @@ export function GamePicker({ games, prefs, loading, error, onSelectGame }: Props
                     {game.awayAbbrev} @ {game.homeAbbrev}
                   </span>
                   <span className="game-row__time">
-                    {game.status === "scheduled"
-                      ? formatTime(game.date)
-                      : ""}
+                    {game.status === "scheduled" ? formatTime(game.date) : ""}
                   </span>
                   {statusBadge(game.status)}
                   {isFav && (
