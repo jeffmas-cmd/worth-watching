@@ -94,6 +94,18 @@ export function PrefsPanel({ prefs, onChange, onClose }: Props) {
       </section>
 
       <section className="prefs-section">
+        <h3>Appearance</h3>
+        <label className="prefs-checkbox">
+          <input
+            type="checkbox"
+            checked={prefs.darkMode}
+            onChange={() => update({ darkMode: !prefs.darkMode })}
+          />
+          Dark mode
+        </label>
+      </section>
+
+      <section className="prefs-section">
         <h3>Team Bias</h3>
         <label className="prefs-radio">
           <input

@@ -53,6 +53,13 @@ export default function App() {
     }
   }, [games, selectedGame]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute(
+      "data-theme",
+      prefs.darkMode ? "dark" : "light"
+    );
+  }, [prefs.darkMode]);
+
   const handlePrefsChange = (updated: Prefs) => {
     setPrefs(updated);
     savePrefs(updated);

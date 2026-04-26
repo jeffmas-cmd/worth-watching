@@ -27,6 +27,7 @@ export interface Prefs {
   watchReasons: WatchReason[];
   spoilerTolerance: SpoilerTolerance;
   teamBias: TeamBias;
+  darkMode: boolean;
   feedbackHistory: FeedbackEntry[];
 }
 

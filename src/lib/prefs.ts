@@ -13,6 +13,7 @@ export const DEFAULT_PREFS: Prefs = {
   watchReasons: ["close", "comeback"],
   spoilerTolerance: "story",
   teamBias: "any",
+  darkMode: false,
   feedbackHistory: [],
 };
 
